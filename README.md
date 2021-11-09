@@ -1,7 +1,6 @@
 ## Twitching Mouse
 
-Mouse example for STM32F103. Emulate USB mouse which moves every 10 seconds. Device can be used to
-prevent computer locking.
+Mouse example for STM32F103. Emulate USB mouse which moves every 10 seconds. Device can be used to prevent locking.
 
 ## Build
 
