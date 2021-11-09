@@ -1,0 +1,27 @@
+[package]
+name = "twitchy-mouse"
+version = "0.1.0"
+edition = "2021"
+
+[profile.release]
+codegen-units = 1
+lto = true
+debug = true
+opt-level = "s"
+
+[dependencies]
+cortex-m = "0.6"
+cortex-m-rt = "0.6"
+cortex-m-semihosting = "0.3"
+embedded-hal = "0.2"
+micromath = "1.1"
+nb = "1.0"
+panic-halt = "0.2"
+usb-device = "0.2"
+usbd-hid = "0.5"
+usbd-hid-device = "0.1"
+usbd-serial = "0.1"
+
+[dependencies.stm32f1xx-hal]
+version = "0.7"
+features = ["rt", "stm32f103", "stm32-usbd", "medium"]
