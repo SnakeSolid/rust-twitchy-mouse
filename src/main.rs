@@ -11,18 +11,17 @@ use cortex_m_semihosting::hprintln;
 use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::digital::v2::OutputPin;
 use panic_halt as _;
+use stm32f1xx_hal::delay::Delay;
+use stm32f1xx_hal::flash::FlashExt;
 use stm32f1xx_hal::gpio::gpioa::PA11;
 use stm32f1xx_hal::gpio::gpioa::PA12;
 use stm32f1xx_hal::gpio::Floating;
-use stm32f1xx_hal::gpio::Input;
-use stm32f1xx_hal::pac::USB;
-use usbd_hid::descriptor::SerializedDescriptor;
-use stm32f1xx_hal::delay::Delay;
-use stm32f1xx_hal::flash::FlashExt;
 use stm32f1xx_hal::gpio::GpioExt;
+use stm32f1xx_hal::gpio::Input;
 use stm32f1xx_hal::pac;
 use stm32f1xx_hal::pac::interrupt;
 use stm32f1xx_hal::pac::Interrupt;
+use stm32f1xx_hal::pac::USB;
 use stm32f1xx_hal::rcc::RccExt;
 use stm32f1xx_hal::time::U32Ext;
 use stm32f1xx_hal::usb::Peripheral as UsbPeripheral;
@@ -31,7 +30,9 @@ use usb_device::class_prelude::UsbBusAllocator;
 use usb_device::device::UsbDevice;
 use usb_device::device::UsbDeviceBuilder;
 use usb_device::device::UsbVidPid;
+use usb_device::UsbError;
 use usbd_hid::descriptor::MouseReport;
+use usbd_hid::descriptor::SerializedDescriptor;
 use usbd_hid::hid_class::HIDClass;
 use usbd_hid_device::USB_CLASS_HID;
 
@@ -88,6 +89,17 @@ fn make_usb_bus(
     unsafe { USB_BUS.as_ref().unwrap() }
 }
 
+#[inline]
+fn mouse_move_report(x: i8, y: i8) -> MouseReport {
+    MouseReport {
+        buttons: 0,
+        x,
+        y,
+        wheel: 0,
+        pan: 0,
+    }
+}
+
 #[entry]
 fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
@@ -121,20 +133,24 @@ fn main() -> ! {
         .product("Twitchy Mouse")
         .device_class(USB_CLASS_HID)
         .build();
-    let move_right = MouseReport {
-        buttons: 0,
-        x: 8,
-        y: 0,
-        wheel: 0,
-        pan: 0,
-    };
-    let move_left = MouseReport {
-        buttons: 0,
-        x: -8,
-        y: 0,
-        wheel: 0,
-        pan: 0,
-    };
+    let actions = [
+        mouse_move_report(0, 24),
+        mouse_move_report(9, 22),
+        mouse_move_report(17, 17),
+        mouse_move_report(22, 9),
+        mouse_move_report(24, 0),
+        mouse_move_report(22, -9),
+        mouse_move_report(17, -17),
+        mouse_move_report(9, -22),
+        mouse_move_report(0, -24),
+        mouse_move_report(-9, -22),
+        mouse_move_report(-17, -17),
+        mouse_move_report(-22, -9),
+        mouse_move_report(-24, 0),
+        mouse_move_report(-22, 9),
+        mouse_move_report(-17, 17),
+        mouse_move_report(-9, 22),
+    ];
 
     unsafe { USB_HID = Some(usb_hid) };
     unsafe { USB_DEVICE = Some(usb_device) };
@@ -148,21 +164,24 @@ fn main() -> ! {
     loop {
         led.set_low().success();
 
-        free(|_cs| match unsafe { USB_HID.as_mut() } {
-            Some(hid) => {
-                let _ = hid.push_input(&move_right);
-            }
-            _ => {}
-        });
+        for action in actions {
+            loop {
+                let result = free(|_cs| match unsafe { USB_HID.as_mut() } {
+                    Some(hid) => hid.push_input(&action),
+                    _ => panic!("HID not initialized"),
+                });
 
-        delay.delay_ms(50 as u16);
+                match result {
+                    Ok(_) => break,
+                    Err(UsbError::WouldBlock) => continue,
+                    Err(err) => {
+                        hprintln!("USB error: {:?}", err).ok();
 
-        free(|_cs| match unsafe { USB_HID.as_mut() } {
-            Some(hid) => {
-                let _ = hid.push_input(&move_left);
+                        break;
+                    }
+                }
             }
-            _ => {}
-        });
+        }
 
         led.set_high().success();
 
