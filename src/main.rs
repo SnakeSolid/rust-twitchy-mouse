@@ -134,14 +134,6 @@ fn main() -> ! {
         .device_class(USB_CLASS_HID)
         .build();
     let actions = [
-        mouse_move_report(0, 24),
-        mouse_move_report(9, 22),
-        mouse_move_report(17, 17),
-        mouse_move_report(22, 9),
-        mouse_move_report(24, 0),
-        mouse_move_report(22, -9),
-        mouse_move_report(17, -17),
-        mouse_move_report(9, -22),
         mouse_move_report(0, -24),
         mouse_move_report(-9, -22),
         mouse_move_report(-17, -17),
@@ -150,6 +142,14 @@ fn main() -> ! {
         mouse_move_report(-22, 9),
         mouse_move_report(-17, 17),
         mouse_move_report(-9, 22),
+        mouse_move_report(0, 24),
+        mouse_move_report(9, 22),
+        mouse_move_report(17, 17),
+        mouse_move_report(22, 9),
+        mouse_move_report(24, 0),
+        mouse_move_report(22, -9),
+        mouse_move_report(17, -17),
+        mouse_move_report(9, -22),
     ];
 
     unsafe { USB_HID = Some(usb_hid) };
