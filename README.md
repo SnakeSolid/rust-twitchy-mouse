@@ -22,7 +22,7 @@ openocd -f /usr/share/openocd/scripts/interface/stlink-v2.cfg -f stm32f1x.cfg
 Start remote GBD session in `gdb-multiarch`:
 
 ```sh
-gdb-multiarch temperature-dht22
+gdb-multiarch gdb-multiarch target/thumbv7m-none-eabi/release/twitchy-mouse
 ```
 
 Following command can be used in GDB session co connect to `openocd` and write firmware
